@@ -95,10 +95,6 @@ def fetch_audio_url(reciter_id, chapter_number):
         logger.error(f"خطأ في الاتصال (audio): {str(e)}")
         return None, 0
 
-# ----------------------------
-# أوامر البوت
-# ----------------------------
-
 @app.on_message(filters.command("start"))
 async def start_cmd(client: Client, message: Message):
     text = (
@@ -124,7 +120,6 @@ async def help_cmd(client: Client, message: Message):
     )
     await message.reply(text)
 
-# عند إدخال /play، يعرض البوت قائمة القراء
 @app.on_message(filters.command("play"))
 async def play_cmd(client: Client, message: Message):
     reciters = get_cached_data("reciters", fetch_reciters)
@@ -140,7 +135,6 @@ async def play_cmd(client: Client, message: Message):
     reply_markup = InlineKeyboardMarkup(buttons)
     await message.reply("🎙 اختر القارئ:", reply_markup=reply_markup)
 
-# عند اختيار قارئ، يتم تخزين القارئ المختار وعرض قائمة السور
 @app.on_callback_query(filters.regex(r"^rec_(\d+)$"))
 async def reciter_selected(client: Client, callback: CallbackQuery):
     user_id = callback.from_user.id
@@ -161,12 +155,10 @@ async def reciter_selected(client: Client, callback: CallbackQuery):
     reply_markup = InlineKeyboardMarkup(buttons)
     await callback.message.edit_text("📖 اختر السورة:", reply_markup=reply_markup)
 
-# معالجة زر الرجوع
 @app.on_callback_query(filters.regex(r"^back_to_start$"))
 async def back_to_start_cmd(client: Client, callback: CallbackQuery):
     await callback.message.edit_text("🔙 العودة إلى القائمة الرئيسية. استخدم /play لعرض قائمة القراء مرة أخرى.")
 
-# عند اختيار سورة، يتم تشغيل التسجيل الصوتي باستخدام القارئ المختار
 @app.on_callback_query(filters.regex(r"^ch_(\d+)$"))
 async def chapter_selected(client: Client, callback: CallbackQuery):
     user_id = callback.from_user.id
@@ -183,7 +175,7 @@ async def chapter_selected(client: Client, callback: CallbackQuery):
         await callback.answer("❌ تعذر جلب رابط التسجيل", show_alert=True)
         return
 
-    max_size = 50 * 1024 * 1024  # 50MB
+    max_size = 50 * 1024 * 1024 
     if file_size is not None and file_size > max_size:
         text = (
             f"❗ الملف كبير جدًا ({file_size/1024/1024:.2f}MB).\n"
@@ -199,7 +191,6 @@ async def chapter_selected(client: Client, callback: CallbackQuery):
                 performer=f"القارئ {state['current_reciter']}"
             )
             state["audio_message_id"] = sent_audio.id
-            # إضافة أزرار التحكم
             controls = InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("⏸ إيقاف", callback_data="pause"),
@@ -218,7 +209,6 @@ async def chapter_selected(client: Client, callback: CallbackQuery):
             err = str(e)
             logger.error(f"خطأ في تشغيل السورة: {err}")
             if "WEBPAGE_MEDIA_EMPTY" in err or "WEBPAGE_CURL_FAILED" in err:
-                # في حالة فشل تيليجرام في تحميل الملف، إرسال الرابط بدلاً من ذلك
                 await callback.message.edit_text(
                     f"❗ تعذر تشغيل التسجيل بسبب مشكلة في الملف.\n"
                     f"يمكنك الاستماع إليه عبر الرابط:\n{audio_link}"
@@ -226,7 +216,6 @@ async def chapter_selected(client: Client, callback: CallbackQuery):
             else:
                 await callback.message.edit_text("❌ فشل في تشغيل السورة.")
 
-# معالجات أزرار التحكم
 @app.on_callback_query(filters.regex(r"^(pause|resume|next|back_to_chapters|close)$"))
 async def control_buttons(client: Client, callback: CallbackQuery):
     user_id = callback.from_user.id
