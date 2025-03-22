@@ -1,5 +1,2 @@
 [start]
 cmd = "python bot.py"
-
-[phases.install]
-cmds = ["cp .env /app/.env"]
